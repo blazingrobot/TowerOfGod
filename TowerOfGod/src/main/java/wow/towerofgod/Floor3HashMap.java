@@ -6,117 +6,139 @@ import java.util.Scanner;
 import java.util.Random;
 
 public class Floor3HashMap {
-     private static final Map<String, String> CATALYST_PROPERTIES = new HashMap<>();
-    private static final String[] PROPERTIES = {"Heat", "Water", "Wind", "Gravity", "Light", "Storm", "Mist", "Void"};
+    private static final Map<String, String> catalystProperties = new HashMap<>();
+    private static final String[] allProperties = {"Heat", "Water", "Wind", "Gravity", "Light", "Storm", "Mist", "Void"};
     private static final Random random = new Random();
-    private static int shinsooEnergy = 100;
-    private static int correctAnswers = 0;
-    private static final int PUZZLE_REQUIREMENT = 3;
+    //Game storage, this level gamit tag Hashmap
     
+    //Player stats
+    private static int energy = 100;
+    private static int correctAnswers = 0;
+    private static final int ANSWERS_NEEDED = 3;
+
+    //game data
     static {
-        // Simplified catalyst-property pairs
-        CATALYST_PROPERTIES.put("Crimson Core", "Heat");
-        CATALYST_PROPERTIES.put("Azure Gem", "Water");
-        CATALYST_PROPERTIES.put("Verdant Shard", "Wind");
-        CATALYST_PROPERTIES.put("Obsidian Fragment", "Gravity");
-        CATALYST_PROPERTIES.put("Golden Prism", "Light");
-        CATALYST_PROPERTIES.put("Violet Crystal", "Storm");
-        CATALYST_PROPERTIES.put("Silver Orb", "Mist");
-        CATALYST_PROPERTIES.put("Ebony Stone", "Void");
+        catalystProperties.put("Crimson Core", "Heat");
+        catalystProperties.put("Azure Gem", "Water");
+        catalystProperties.put("Verdant Shard", "Wind");
+        catalystProperties.put("Obsidian Fragment", "Gravity");
+        catalystProperties.put("Golden Prism", "Light");
+        catalystProperties.put("Violet Crystal", "Storm");
+        catalystProperties.put("Silver Orb", "Mist");
+        catalystProperties.put("Ebony Stone", "Void");
     }
     
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scan = new Scanner(System.in);
         
+        // Game introduction
         System.out.println("=== Shinsoo Resonance Chamber ===");
-        System.out.println("Administrator: \"Match catalysts to their Shinsoo properties.\"");
-        System.out.println("               \"Answer 3 correctly to solve my puzzle.\"\n");
+        System.out.println("Match each catalyst to its property.");
+        System.out.println("Get 3 correct answers to unlock the puzzle!");
         
-        while (shinsooEnergy > 0) {
-            String catalyst = getRandomCatalyst();
-            String correctProperty = CATALYST_PROPERTIES.get(catalyst);
-            String[] options = generateOptions(correctProperty);
+        // Main game loop
+        while (energy > 0) {
+            playRound(scan);
             
-            System.out.println("\nEnergy: " + shinsooEnergy + "% | Correct: " + correctAnswers + "/" + PUZZLE_REQUIREMENT);
-            System.out.println("\nCatalyst: " + catalyst);
-            System.out.println("Properties:");
-            for (int i = 0; i < options.length; i++) {
-                System.out.println((i+1) + ") " + options[i]);
-            }
-            
-            System.out.print("Choose (1-4): ");
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-            
-            if (choice >= 1 && choice <= 4 && 
-                options[choice-1].equalsIgnoreCase(correctProperty)) {
-                correctAnswers++;
-                shinsooEnergy = Math.min(100, shinsooEnergy + 10);
-                System.out.println("\nCorrect! Energy +10");
-                
-                if (correctAnswers >= PUZZLE_REQUIREMENT) {
-                    if (solvePuzzle(scanner)) {
-                        System.out.println("\nAdministrator: \"You may proceed.\"");
-                        break;
-                    } else {
-                        correctAnswers = 0;
-                    }
-                }
-            } else {
-                int damage = 15 + random.nextInt(10);
-                shinsooEnergy -= damage;
-                System.out.println("\nWrong! Energy -" + damage + " | Correct: " + correctProperty);
-                if (shinsooEnergy <= 0) {
-                    System.out.println("\nYou collapsed! Game Over.");
+            // Check if player can attempt the puzzle
+            if (correctAnswers >= ANSWERS_NEEDED) {
+                if (solvePuzzle(scan)) {
+                    System.out.println("\nYou passed the test!");
+                    break; // Exit game loop on success
                 }
             }
         }
-        scanner.close();
+        
+        scan.close();
     }
     
-    private static String[] generateOptions(String correctProperty) {
+    private static void playRound(Scanner scanner) {
+        String catalyst = getRandomCatalyst();
+        String correctAnswer = catalystProperties.get(catalyst); // Get random catalyst and its correct property
+        
+        String[] choices = generateChoices(correctAnswer); // Generate multiple-choice options
+        
+        System.out.println("\nEnergy: " + energy + "% | Correct: " + correctAnswers + "/" + ANSWERS_NEEDED);
+        System.out.println("Catalyst: " + catalyst);
+        
+        for (int i = 0; i < choices.length; i++) {
+            System.out.println((i+1) + ") " + choices[i]); // Show choices
+        }
+        
+        System.out.print("Your choice (1-4): ");
+        int playerChoice = scanner.nextInt();
+        scanner.nextLine(); 
+        
+        //check answer
+        if (playerChoice >= 1 && playerChoice <= 4 && 
+            choices[playerChoice-1].equalsIgnoreCase(correctAnswer)) {
+            correctAnswers++;
+            energy = Math.min(100, energy + 10);
+            System.out.println("Correct! +10 Energy");
+        } else {
+            int damage = 15 + random.nextInt(10);
+            energy -= damage;
+            System.out.println("Wrong! -" + damage + " Energy");
+            System.out.println("Correct answer was: " + correctAnswer);
+            
+            if (energy <= 0) {
+                System.out.println("\nYou ran out of energy! Game Over.");
+            }
+        }
+    }
+    
+    private static String[] generateChoices(String correctAnswer) {
         String[] options = new String[4];
-        options[0] = correctProperty;
+        options[0] = correctAnswer; 
         
         for (int i = 1; i < 4; i++) {
-            String randomProp;
+            String wrongAnswer;
             do {
-                randomProp = PROPERTIES[random.nextInt(PROPERTIES.length)];
-            } while (arrayContains(options, randomProp));
-            options[i] = randomProp;
+                wrongAnswer = allProperties[random.nextInt(allProperties.length)];
+            } while (arrayContains(options, wrongAnswer));
+            options[i] = wrongAnswer;
         }
         
         // Shuffle options
         for (int i = 0; i < options.length; i++) {
-            int randomPos = random.nextInt(options.length);
+            int swapWith = random.nextInt(options.length);
             String temp = options[i];
-            options[i] = options[randomPos];
-            options[randomPos] = temp;
+            options[i] = options[swapWith];
+            options[swapWith] = temp;
         }
         
         return options;
     }
     
-    private static boolean arrayContains(String[] arr, String value) {
-        for (String s : arr) {
-            if (s != null && s.equalsIgnoreCase(value)) {
+    private static boolean solvePuzzle(Scanner scanner) {
+        System.out.println("\n=== Final Puzzle ===");
+        System.out.println("Put these in order:");
+        System.out.println("1) Heat\n2) Water\n3) Wind\n4) Gravity");
+        System.out.print("Enter the correct order (e.g. 1,2,3,4): ");
+        
+        String answer = scanner.nextLine().replace(" ", "");
+        boolean correct = answer.equalsIgnoreCase("1,2,3,4");
+        
+        if (correct) {
+            return true;
+        } else {
+            System.out.println("Wrong order! Try again after more correct answers.");
+            correctAnswers = 0; // Reset progress
+            return false;
+        }
+    }
+    
+    private static boolean arrayContains(String[] array, String value) {
+        for (String item : array) {
+            if (item != null && item.equalsIgnoreCase(value)) {
                 return true;
             }
         }
         return false;
     }
     
-    private static boolean solvePuzzle(Scanner scanner) {
-        System.out.println("\nAdministrator: \"Now, arrange these properties in order:\"");
-        System.out.println("1) Heat\n2) Water\n3) Wind\n4) Gravity");
-        System.out.print("Enter sequence (e.g., 1,2,3,4): ");
-        String answer = scanner.nextLine().trim();
-        return answer.equalsIgnoreCase("1,2,3,4") || 
-               answer.equalsIgnoreCase("1, 2, 3, 4");
-    }
-    
     private static String getRandomCatalyst() {
-        int index = random.nextInt(CATALYST_PROPERTIES.size());
-        return (String) CATALYST_PROPERTIES.keySet().toArray()[index];
+        Object[] catalysts = catalystProperties.keySet().toArray();
+        return (String) catalysts[random.nextInt(catalysts.length)];
     }
 }
